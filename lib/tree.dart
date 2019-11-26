@@ -6,6 +6,8 @@ import 'utilities.dart' show read_json_from_file, choose_file_to_read;
 
 class Node {
   Map<String, dynamic> _data;
+  double _vertical_offset;
+  double _cumulative_vertical_offset;
 
   Node.cast(dynamic data) : _data = data as Map<String, dynamic>;
 
@@ -31,6 +33,23 @@ class Node {
         subtree._compute_cumulative_lengths(cumul: cumul);
       }
     }
+  }
+
+  double _compute_cumulative_vertical_offsets({double cumul = 0.0}) {
+    //   if (!hidden) {
+    //     cumul += _vertical_offset;
+    //     _cumulative_vertical_offset = cumul;
+    //     if (this.has_children) {
+    //       for (Node subtree in this.children) {
+    //         subtree._compute_cumulative_vertical_offsets(cumul: _cumulative_vertical_offset);
+    //       }
+    //     } else {
+    //       _vertical_offset = 1.0;
+    //       cumul += _vertical_offset;
+    //       _cumulative_vertical_offset = cumul;
+    //     }
+    //   }
+    return cumul;
   }
 
   double get max_cumulative_length {
@@ -66,6 +85,7 @@ class Tree extends Node {
         lineage = data["l"],
         super.cast(data["tree"]) {
     _upgrade(data["  version"]);
+    _compute_cumulative_vertical_offsets();
     // print("max_cumulative_lengths: ${max_cumulative_lengths}");
     // print("number_of_leaves: ${number_of_leaves}");
   }

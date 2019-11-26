@@ -56,7 +56,7 @@ class DrawTree {
 
 class TreeCustomPainter extends CustomPainter {
   DrawTree _draw_tree;
-  int _paint_no = 0;
+  // int _paint_no = 0;
 
   TreeCustomPainter(DrawTree draw_tree)
       : _draw_tree = draw_tree,
@@ -78,7 +78,7 @@ class TreeCustomPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // resize_window(canvas, size);
     if (size.width >= 500.0) {
-      ++_paint_no;
+      // ++_paint_no;
       // print("paint $_paint_no $size");
       _draw_tree.paint(LeinwandCanvas(canvas, size), size);
     }
