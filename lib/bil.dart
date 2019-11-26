@@ -58,6 +58,8 @@ class BilPage extends StatefulWidget {
   Tree _tree;
   DrawTree draw_tree = DrawTree();
 
+  bool get has_tree => _tree != null;
+
   void set_tree(Tree tree) {
     _tree = tree;
     draw_tree.set_tree(tree);
@@ -82,20 +84,22 @@ class BilPageState extends State<BilPage> {
   }
 
   void reload_tree({bool force = false}) async {
-    widget.set_tree(await Tree.load(force_reload: force));
-    setState(() {
-      _title = widget._tree?.filename ?? "Bil 2";
-    });
+    if (!widget.has_tree || force) {
+      widget.set_tree(await Tree.load(force_reload: force || !widget.has_tree));
+      setState(() {
+        _title = widget._tree?.filename ?? "Bil <no tree>";
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    reload_tree();
     return Scaffold(
       appBar: AppBar(
         title: Text(this.title),
         centerTitle: false,
       ),
-
       body: Column(
         children: <Widget>[
           AspectRatio(
@@ -108,7 +112,6 @@ class BilPageState extends State<BilPage> {
       ),
     );
   }
-
 }
 
 // ======================================================================

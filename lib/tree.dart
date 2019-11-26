@@ -33,9 +33,9 @@ class Node {
     }
   }
 
-  double get max_cumulative_lengths {
+  double get max_cumulative_length {
     if (this.has_children) {
-      return this.children.map<double>((Node node) => !node.hidden ? node.max_cumulative_lengths : 0.0).fold(0.0, max);
+      return this.children.map<double>((Node node) => !node.hidden ? node.max_cumulative_length : 0.0).fold(0.0, max);
     } else {
       return this.cumulative;
     }
@@ -80,7 +80,7 @@ class Tree extends Node {
         if (content['  version'] != "newick-tree-v1" && content['  version'] != "phylogenetic-tree-v3") {
           throw "Unrecogned tree file version: ${content['  version']}";
         }
-        final tree = Tree._imported_from_json(content);
+        final tree = new Tree._imported_from_json(content);
         tree._filename = filename;
         return tree;
       }
