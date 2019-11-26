@@ -1,0 +1,2 @@
+#! /bin/bash
+exec ./build/macos/Build/Products/Debug/bil.app/Contents/MacOS/bil

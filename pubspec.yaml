@@ -1,0 +1,45 @@
+name: bil
+description: Bil - show trees and antigenic maps.
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^0.1.2
+
+  pdf:
+  path: ^1.6.4
+  
+  # https://github.com/google/flutter-desktop-embedding/tree/master/plugins
+  window_size:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/window_size
+
+  color_panel:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/color_panel
+
+  menubar:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/menubar
+
+  file_chooser:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/file_chooser
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+  uses-material-design: true

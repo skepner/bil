@@ -1,0 +1,11 @@
+# Flutter-related
+**/Flutter/ephemeral/
+**/Flutter/GeneratedPluginRegistrant.swift
+**/Pods/
+
+# Xcode-related
+**/xcuserdata/
+
+# 2019-11-14
+Podfile.lock
+Runner.xcworkspace
