@@ -1,4 +1,5 @@
 import 'dart:math' show max;
+import 'dart:collection' show IterableBase;
 
 import 'utilities.dart' show read_json_from_file, choose_file_to_read;
 
@@ -80,14 +81,28 @@ class Tree extends Node {
 
   String get filename => _filename;
 
+  // ----------------------------------------------------------------------
+  // iterating
+  // ----------------------------------------------------------------------
+
+  // TreeLeafIterator leaves() => TreeLeafIterator(this);
+
+  // ----------------------------------------------------------------------
+  // constructing
+  // ----------------------------------------------------------------------
+
   Tree._imported_from_json(Map<String, dynamic> data)
       : virus_type = data["v"],
         lineage = data["l"],
         super.cast(data["tree"]) {
     _upgrade(data["  version"]);
-    _compute_cumulative_vertical_offsets();
+    // _compute_cumulative_vertical_offsets();
     // print("max_cumulative_lengths: ${max_cumulative_lengths}");
     // print("number_of_leaves: ${number_of_leaves}");
+
+    // for (var leaf in leaves()) {
+    //   print("${leaf.seq_id}");
+    // }
   }
 
   static Future<Tree> load({String filename, bool force_reload = false}) async {
@@ -114,5 +129,53 @@ class Tree extends Node {
     }
   }
 }
+
+// ----------------------------------------------------------------------
+
+// class TreeLeafIterator extends IterableBase<Node> implements Iterator<Node> {
+//   List<int> _child_indexes = [];
+//   List<Node> _parents = [];
+//   Node _current;
+
+//   TreeLeafIterator(Tree root) {
+//     _parents.add(root);
+//   }
+
+//   @override
+//   Node get current => _current;
+
+//   @override
+//   bool moveNext() {
+//     if (_child_indexes.isEmpty) {
+//       _current = _find_first_leaf(_parents[0]);
+//       // print("moveNext ${_child_indexes}");
+//       return true;
+//     } else {
+//       final cur = _find_next_leaf();
+//       if (cur == null) {
+//         return false;
+//       } else {
+//         _current = cur;
+//         return true;
+//       }
+//     }
+//   }
+
+//   @override
+//   TreeLeafIterator get iterator => this;
+
+//   Node _find_first_leaf(Node start) {
+//     if (start.has_children) {
+//       _parents.add(start);
+//       _child_indexes.add(0);
+//       return _find_first_leaf(start.children[0]);
+//     } else {
+//       return start;
+//     }
+//   }
+
+//     Node _find_next_leaf(Node start) {
+
+// }
 
 // ======================================================================
