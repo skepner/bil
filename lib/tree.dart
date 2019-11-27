@@ -26,7 +26,7 @@ class Node {
   List<String> get aa_substitutions => _data["A"];
   List<String> get clades => _data["L"];
 
-  void _compute_cumulative_lengths({double cumul = 0.0}) {
+  void _compute_cumulative_lengths_old({double cumul = 0.0}) {
     cumul += this.edge;
     _data["c"] = cumul;
     if (this.has_children) {
@@ -87,6 +87,39 @@ class Tree extends Node {
 
   // TreeLeafIterator leaves() => TreeLeafIterator(this);
 
+  void all_leaves(void Function(Node) callback, [Node node]) {
+    if (node == null) {
+      node = this;
+    }
+    if (node.has_children) {
+      for (final child in node.children) {
+        all_leaves(callback, child);
+      }
+    }
+    else {
+      callback(node);
+    }
+  }
+
+  void all_nodes(void Function(Node) callback, [Node node]) {
+    if (node == null) {
+      node = this;
+    }
+    callback(node);
+    if (node.has_children) {
+      for (final child in node.children) {
+        all_nodes(callback, child);
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------------
+
+  // void _compute_cumulative_lengths({double cumul = 0.0}) {
+  //   all_nodes((Node node) {
+  //   });
+  // }
+
   // ----------------------------------------------------------------------
   // constructing
   // ----------------------------------------------------------------------
@@ -100,9 +133,7 @@ class Tree extends Node {
     // print("max_cumulative_lengths: ${max_cumulative_lengths}");
     // print("number_of_leaves: ${number_of_leaves}");
 
-    // for (var leaf in leaves()) {
-    //   print("${leaf.seq_id}");
-    // }
+    // all_leaves((Node leaf) => print("${leaf.seq_id}"));
   }
 
   static Future<Tree> load({String filename, bool force_reload = false}) async {
