@@ -39,8 +39,10 @@ class Tree extends Node {
   String _filename;
   String virus_type;
   String lineage;
+  double _height;
 
   String get filename => _filename;
+  double get height => _height;
 
   // ----------------------------------------------------------------------
   // iterating
@@ -80,12 +82,12 @@ class Tree extends Node {
 
   // must be called upon hiding leaves and upon inserting gaps
   double _compute_cumulative_vertical_offsets() {
-    double cumul = 0.0;
+    _height = 0.0;
     iterate_and_call(
       leaf: (Node node) {
         node._vertical_offset ??= 1.0; // may be already set by gap making function
-        cumul += node._vertical_offset;
-        node._cumulative_vertical_offset = cumul;
+        _height += node._vertical_offset;
+        node._cumulative_vertical_offset = _height;
         // print("leaf ${node._cumulative_vertical_offset} ${node.seq_id}");
       },
       post: (Node node) {
@@ -99,7 +101,7 @@ class Tree extends Node {
       },
       shown_only: false,
     );
-    return cumul;
+    return _height;
   }
 
   double get max_cumulative_length {
@@ -123,8 +125,7 @@ class Tree extends Node {
         lineage = data["l"],
         super.cast(data["tree"]) {
     _upgrade(data["  version"]);
-    final tree_height = _compute_cumulative_vertical_offsets();
-    print("tree_height: $tree_height");
+    _compute_cumulative_vertical_offsets();
     // print("max_cumulative_lengths: ${max_cumulative_lengths}");
     // print("number_of_leaves: ${number_of_leaves}");
 
