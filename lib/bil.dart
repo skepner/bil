@@ -80,7 +80,6 @@ class BilPageState extends State<BilPage> {
   void initState() {
     super.initState();
     make_menubar(this);
-    reload_tree();
   }
 
   void reload_tree({bool force = false}) async {

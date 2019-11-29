@@ -14,6 +14,7 @@ class Node {
 
   double get edge => _data["l"] ?? 0.0;
   double get cumulative => _data["c"];
+  void set cumulative(double cumul) => _data["c"] = cumul;
   List<Node> get children => _data["t"].map<Node>((dynamic elt) => Node.cast(elt)).toList(growable: false);
   bool get has_children => !(_data["t"]?.isEmpty ?? true);
   bool get hidden => _data["H"] ?? false;
@@ -25,16 +26,6 @@ class Node {
   List<String> get hi_names => _data["h"];
   List<String> get aa_substitutions => _data["A"];
   List<String> get clades => _data["L"];
-
-  void _compute_cumulative_lengths_old({double cumul = 0.0}) {
-    cumul += this.edge;
-    _data["c"] = cumul;
-    if (this.has_children) {
-      for (Node subtree in this.children) {
-        subtree._compute_cumulative_lengths(cumul: cumul);
-      }
-    }
-  }
 
   double _compute_cumulative_vertical_offsets({double cumul = 0.0}) {
     //   if (!hidden) {
@@ -87,38 +78,59 @@ class Tree extends Node {
 
   // TreeLeafIterator leaves() => TreeLeafIterator(this);
 
-  void all_leaves(void Function(Node) callback, [Node node]) {
-    if (node == null) {
-      node = this;
-    }
+  void iterate_and_call({void Function(Node) pre, void Function(Node) leaf, void Function(Node) post, Node node}) {
+    node ??= this;
     if (node.has_children) {
+      pre?.call(node);
       for (final child in node.children) {
-        all_leaves(callback, child);
+        iterate_and_call(pre: pre, leaf: leaf, post: post, node: child);
       }
+      post?.call(node);
     }
     else {
-      callback(node);
+      leaf?.call(node);
     }
   }
 
-  void all_nodes(void Function(Node) callback, [Node node]) {
-    if (node == null) {
-      node = this;
-    }
-    callback(node);
-    if (node.has_children) {
-      for (final child in node.children) {
-        all_nodes(callback, child);
-      }
-    }
-  }
+  // void all_leaves(void Function(Node) callback, [Node node]) {
+  //   if (node == null) {
+  //     node = this;
+  //   }
+  //   if (node.has_children) {
+  //     for (final child in node.children) {
+  //       all_leaves(callback, child);
+  //     }
+  //   }
+  //   else {
+  //     callback(node);
+  //   }
+  // }
+
+  // void all_nodes(void Function(Node) callback, [Node node]) {
+  //   if (node == null) {
+  //     node = this;
+  //   }
+  //   callback(node);
+  //   if (node.has_children) {
+  //     for (final child in node.children) {
+  //       all_nodes(callback, child);
+  //     }
+  //   }
+  // }
 
   // ----------------------------------------------------------------------
 
-  // void _compute_cumulative_lengths({double cumul = 0.0}) {
-  //   all_nodes((Node node) {
-  //   });
-  // }
+  void _compute_cumulative_lengths({double cumul = 0.0}) {
+    iterate_and_call(
+      pre: (Node node) {
+        cumul += node.edge;
+        node.cumulative = cumul;
+      },
+      leaf: (Node node) => node.cumulative = cumul + node.edge,
+      post: (Node node) => cumul -= node.edge,
+    );
+  }
+
 
   // ----------------------------------------------------------------------
   // constructing
