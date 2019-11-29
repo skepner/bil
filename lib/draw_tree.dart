@@ -35,7 +35,7 @@ class DrawTree {
         _size_painted = size;
       }
       print("DrawTree::paint leinwand size ${leinwand.size}");
-      print("DrawTree::paint tree: $_tree  cumul width ${_tree?.max_cumulative_length}");
+      print("DrawTree::paint tree: $_tree  tree width (max_cumulative_length): ${_tree?.max_cumulative_length}  num_leaves: ${_tree?.number_of_leaves}");
 
       leinwand.rectangle(leinwand.top_left & leinwand.size, outline: Color(0xFF008080), outline_width: Pixels(1.0));
       // leinwand.rectangle(const Offset(0.5, 0.5) & const Size(0.2, 0.1), outline: Color(0xFF008080), outline_width: Pixels(5.0), fill: Color(0xFFFF80FF));

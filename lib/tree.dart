@@ -5,18 +5,18 @@ import 'utilities.dart' show read_json_from_file, choose_file_to_read;
 
 // ======================================================================
 
+// Node is a thin wrapper over _data, it is created/destroyed in get children, it cannot have fields
 class Node {
   Map<String, dynamic> _data;
-  double _vertical_offset;
-  double _cumulative_vertical_offset;
 
   Node.cast(dynamic data) : _data = data as Map<String, dynamic>;
 
   double get edge => _data["l"] ?? 0.0;
   double get cumulative => _data["c"];
   void set cumulative(double cumul) => _data["c"] = cumul;
-  List<Node> get children => _data["t"].map<Node>((dynamic elt) => Node.cast(elt)).toList(growable: false);
+  Iterable<Node> get children => _data["t"].map<Node>((dynamic elt) => Node.cast(elt)); // .toList(growable: false);
   bool get has_children => !(_data["t"]?.isEmpty ?? true);
+  Iterable<Node> get shown_children => children.where((Node node) => !node.hidden);
   bool get hidden => _data["H"] ?? false;
   String get seq_id => _data["n"];
   String get aa => _data["a"];
@@ -27,40 +27,10 @@ class Node {
   List<String> get aa_substitutions => _data["A"];
   List<String> get clades => _data["L"];
 
-  double _compute_cumulative_vertical_offsets({double cumul = 0.0}) {
-    //   if (!hidden) {
-    //     cumul += _vertical_offset;
-    //     _cumulative_vertical_offset = cumul;
-    //     if (this.has_children) {
-    //       for (Node subtree in this.children) {
-    //         subtree._compute_cumulative_vertical_offsets(cumul: _cumulative_vertical_offset);
-    //       }
-    //     } else {
-    //       _vertical_offset = 1.0;
-    //       cumul += _vertical_offset;
-    //       _cumulative_vertical_offset = cumul;
-    //     }
-    //   }
-    return cumul;
-  }
-
-  double get max_cumulative_length {
-    if (this.has_children) {
-      return this.children.map<double>((Node node) => !node.hidden ? node.max_cumulative_length : 0.0).fold(0.0, max);
-    } else {
-      return this.cumulative;
-    }
-  }
-
-  int get number_of_leaves {
-    if (this.hidden) {
-      return 0;
-    } else if (this.has_children) {
-      return this.children.map<int>((Node node) => node.number_of_leaves).fold(0, (int prev, int elt) => prev + elt);
-    } else {
-      return 1;
-    }
-  }
+  double get _vertical_offset => _data["_vertical_offset"];
+  void set _vertical_offset(double vo) => _data["_vertical_offset"] = vo;
+  double get _cumulative_vertical_offset => _data["_cumulative_vertical_offset"];
+  double set _cumulative_vertical_offset(double cvo) => _data["_cumulative_vertical_offset"] = cvo;
 }
 
 // ----------------------------------------------------------------------
@@ -76,51 +46,27 @@ class Tree extends Node {
   // iterating
   // ----------------------------------------------------------------------
 
-  // TreeLeafIterator leaves() => TreeLeafIterator(this);
-
-  void iterate_and_call({void Function(Node) pre, void Function(Node) leaf, void Function(Node) post, Node node}) {
+  void iterate_and_call({void Function(Node) pre, void Function(Node) leaf, void Function(Node) post, Node node, shown_only: true}) {
     node ??= this;
-    if (node.has_children) {
-      pre?.call(node);
-      for (final child in node.children) {
-        iterate_and_call(pre: pre, leaf: leaf, post: post, node: child);
+    if (!shown_only || !node.hidden) {
+      if (node.has_children) {
+        pre?.call(node);
+        for (Node child in node.children) {
+          iterate_and_call(pre: pre, leaf: leaf, post: post, node: child, shown_only: shown_only);
+        }
+        post?.call(node);
+      } else {
+        leaf?.call(node);
       }
-      post?.call(node);
-    }
-    else {
-      leaf?.call(node);
     }
   }
 
-  // void all_leaves(void Function(Node) callback, [Node node]) {
-  //   if (node == null) {
-  //     node = this;
-  //   }
-  //   if (node.has_children) {
-  //     for (final child in node.children) {
-  //       all_leaves(callback, child);
-  //     }
-  //   }
-  //   else {
-  //     callback(node);
-  //   }
-  // }
-
-  // void all_nodes(void Function(Node) callback, [Node node]) {
-  //   if (node == null) {
-  //     node = this;
-  //   }
-  //   callback(node);
-  //   if (node.has_children) {
-  //     for (final child in node.children) {
-  //       all_nodes(callback, child);
-  //     }
-  //   }
-  // }
-
+  // ----------------------------------------------------------------------
+  // Width and height
   // ----------------------------------------------------------------------
 
-  void _compute_cumulative_lengths({double cumul = 0.0}) {
+  void _compute_cumulative_lengths() {
+    double cumul = 0.0;
     iterate_and_call(
       pre: (Node node) {
         cumul += node.edge;
@@ -128,9 +74,45 @@ class Tree extends Node {
       },
       leaf: (Node node) => node.cumulative = cumul + node.edge,
       post: (Node node) => cumul -= node.edge,
+      shown_only: false,
     );
   }
 
+  // must be called upon hiding leaves and upon inserting gaps
+  double _compute_cumulative_vertical_offsets() {
+    double cumul = 0.0;
+    iterate_and_call(
+      leaf: (Node node) {
+        node._vertical_offset ??= 1.0; // may be already set by gap making function
+        cumul += node._vertical_offset;
+        node._cumulative_vertical_offset = cumul;
+        // print("leaf ${node._cumulative_vertical_offset} ${node.seq_id}");
+      },
+      post: (Node node) {
+        var shown_children = node.shown_children;
+        if (!shown_children.isEmpty) {
+          node._cumulative_vertical_offset = (shown_children.first._cumulative_vertical_offset + shown_children.last._cumulative_vertical_offset) / 2.0;
+        }
+        else {
+          print("WARNING: _compute_cumulative_vertical_offsets: shown node has no shown children");
+        }
+      },
+      shown_only: false,
+    );
+    return cumul;
+  }
+
+  double get max_cumulative_length {
+    double mcl = 0.0;
+    iterate_and_call(leaf: (Node node) => mcl = max(mcl, node.cumulative), shown_only: true);
+    return mcl;
+  }
+
+  int get number_of_leaves {
+    int num_leaves = 0;
+    iterate_and_call(leaf: (Node node) => ++num_leaves, shown_only: true);
+    return num_leaves;
+  }
 
   // ----------------------------------------------------------------------
   // constructing
@@ -141,7 +123,8 @@ class Tree extends Node {
         lineage = data["l"],
         super.cast(data["tree"]) {
     _upgrade(data["  version"]);
-    // _compute_cumulative_vertical_offsets();
+    final tree_height = _compute_cumulative_vertical_offsets();
+    print("tree_height: $tree_height");
     // print("max_cumulative_lengths: ${max_cumulative_lengths}");
     // print("number_of_leaves: ${number_of_leaves}");
 
@@ -172,53 +155,5 @@ class Tree extends Node {
     }
   }
 }
-
-// ----------------------------------------------------------------------
-
-// class TreeLeafIterator extends IterableBase<Node> implements Iterator<Node> {
-//   List<int> _child_indexes = [];
-//   List<Node> _parents = [];
-//   Node _current;
-
-//   TreeLeafIterator(Tree root) {
-//     _parents.add(root);
-//   }
-
-//   @override
-//   Node get current => _current;
-
-//   @override
-//   bool moveNext() {
-//     if (_child_indexes.isEmpty) {
-//       _current = _find_first_leaf(_parents[0]);
-//       // print("moveNext ${_child_indexes}");
-//       return true;
-//     } else {
-//       final cur = _find_next_leaf();
-//       if (cur == null) {
-//         return false;
-//       } else {
-//         _current = cur;
-//         return true;
-//       }
-//     }
-//   }
-
-//   @override
-//   TreeLeafIterator get iterator => this;
-
-//   Node _find_first_leaf(Node start) {
-//     if (start.has_children) {
-//       _parents.add(start);
-//       _child_indexes.add(0);
-//       return _find_first_leaf(start.children[0]);
-//     } else {
-//       return start;
-//     }
-//   }
-
-//     Node _find_next_leaf(Node start) {
-
-// }
 
 // ======================================================================
