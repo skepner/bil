@@ -11,8 +11,9 @@ class Node {
 
   Node.cast(dynamic data) : _data = data as Map<String, dynamic>;
 
-  double get edge => _data["l"] ?? 0.0;
-  double get cumulative => _data["c"];
+  dynamic data(String key) => _data[key];
+  double get edge => _data["l"]?.toDouble() ?? 0.0;
+  double get cumulative => _data["c"]?.toDouble();
   void set cumulative(double cumul) => _data["c"] = cumul;
   Iterable<Node> get children => _data["t"].map<Node>((dynamic elt) => Node.cast(elt)); // .toList(growable: false);
   bool get has_children => !(_data["t"]?.isEmpty ?? true);
@@ -29,8 +30,8 @@ class Node {
 
   double get _vertical_offset => _data["_vertical_offset"];
   void set _vertical_offset(double vo) => _data["_vertical_offset"] = vo;
-  double get _cumulative_vertical_offset => _data["_cumulative_vertical_offset"];
-  double set _cumulative_vertical_offset(double cvo) => _data["_cumulative_vertical_offset"] = cvo;
+  double get cumulative_vertical_offset => _data["_cumulative_vertical_offset"];
+  double set cumulative_vertical_offset(double cvo) => _data["_cumulative_vertical_offset"] = cvo;
 }
 
 // ----------------------------------------------------------------------
@@ -87,13 +88,13 @@ class Tree extends Node {
       leaf: (Node node) {
         node._vertical_offset ??= 1.0; // may be already set by gap making function
         _height += node._vertical_offset;
-        node._cumulative_vertical_offset = _height;
-        // print("leaf ${node._cumulative_vertical_offset} ${node.seq_id}");
+        node.cumulative_vertical_offset = _height;
+        // print("leaf ${node.cumulative_vertical_offset} ${node.seq_id}");
       },
       post: (Node node) {
-        var shown_children = node.shown_children;
+        final shown_children = node.shown_children;
         if (!shown_children.isEmpty) {
-          node._cumulative_vertical_offset = (shown_children.first._cumulative_vertical_offset + shown_children.last._cumulative_vertical_offset) / 2.0;
+          node.cumulative_vertical_offset = (shown_children.first.cumulative_vertical_offset + shown_children.last.cumulative_vertical_offset) / 2.0;
         }
         else {
           print("WARNING: _compute_cumulative_vertical_offsets: shown node has no shown children");

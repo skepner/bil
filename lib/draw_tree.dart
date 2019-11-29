@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:window_size/window_size.dart' show getWindowInfo, setWindowFrame;
 
 import 'tree.dart';
-import 'canvas.dart' show Leinwand, LeinwandCanvas, Pixels, draw_pdf;
+import 'canvas.dart' show Leinwand, LeinwandCanvas, Pixels, Scaled, draw_pdf;
 import 'utilities.dart' show choose_file_to_write;
 
 // ======================================================================
@@ -42,6 +42,22 @@ class DrawTree {
       print("horizontal_step: $horizontal_step  vertical_step: $vertical_step");
 
       leinwand.rectangle(leinwand.top_left & leinwand.size, outline: Color(0xFF008080), outline_width: Pixels(1.0));
+
+      _tree.iterate_and_call(
+        pre: (Node node) {
+          final dc = node.data("c");
+          leinwand.line_scaled(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
+              Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
+          final shown_children = node.shown_children;
+          leinwand.line_scaled(Offset(horizontal_step * node.cumulative, vertical_step * shown_children.first.cumulative_vertical_offset),
+              Offset(horizontal_step * node.cumulative, vertical_step * shown_children.last.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
+        },
+        leaf: (Node node) {
+          leinwand.line_scaled(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
+              Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
+        },
+      );
+
       // leinwand.rectangle(const Offset(0.5, 0.5) & const Size(0.2, 0.1), outline: Color(0xFF008080), outline_width: Pixels(5.0), fill: Color(0xFFFF80FF));
 
       // leinwand.line(Offset(0, 0), Offset(0.2, 0.2), Color(0xFFff0000), Pixels(5.0));
