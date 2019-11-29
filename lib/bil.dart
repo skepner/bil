@@ -56,7 +56,10 @@ void make_menubar(BilPageState bil_page_state) {
 class BilPage extends StatefulWidget {
   // final TreeData tree_data = TreeData();
   Tree _tree;
-  DrawTree draw_tree = DrawTree();
+  double _aspect = 4.0 / 3.0;   // width / height
+  DrawTree draw_tree;
+
+  BilPage() { draw_tree = DrawTree(_aspect); }
 
   bool get has_tree => _tree != null;
 
@@ -102,7 +105,7 @@ class BilPageState extends State<BilPage> {
       body: Column(
         children: <Widget>[
           AspectRatio(
-            aspectRatio: 4.0 / 3.0,
+            aspectRatio: widget._aspect,
             child: CustomPaint(painter: TreeCustomPainter(widget.draw_tree)),
           ),
           Text("Bil"),

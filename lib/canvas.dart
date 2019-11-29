@@ -1,9 +1,51 @@
-import 'dart:ui' show Offset, Size, Rect, Canvas, Color, Paint, PaintingStyle;
+import 'dart:ui' show Offset, Size, Rect, Canvas, Color, Paint, PaintingStyle, Path;
 import 'package:flutter/foundation.dart'; // @required
 import 'package:flutter/material.dart' show Matrix4;
 
 import 'package:pdf/pdf.dart' show PdfGraphics, PdfColor, PdfPageFormat;
 import 'package:pdf/widgets.dart' show PdfLineCap, Document, Page, Context;
+
+// ======================================================================
+
+abstract class LeinwandObject {
+  void draw(Leinwand leinwand);
+}
+
+// ----------------------------------------------------------------------
+
+// enum LeinwandPathSegmentType { line, rect, circle }
+
+abstract class _LeinwandPathSegment { // extends _LeinwandObject {
+  void draw(dynamic path);
+}
+
+class _LeinwandPathSegmentLine extends _LeinwandPathSegment {
+  Offset point1, point2;
+
+  _LeinwandPathSegmentLine(this.point1, this.point2);
+
+  void draw(dynamic path) {
+    path.moveTo(point1.dx, point1.dy);
+    path.lineTo(point2.dx, point2.dy);
+  }
+}
+
+class LeinwandPath extends LeinwandObject {
+  final _path = List<_LeinwandPathSegment>();
+  final _paint = Paint();
+
+  LeinwandPath({Color color, Scaled scaled_width}) {
+    _paint
+    ..color = color
+    ..strokeWidth = scaled_width._value;
+  }
+
+  void line(Offset p1, Offset p2) => _path.add(_LeinwandPathSegmentLine(p1, p2));
+
+  void draw(Leinwand leinwand) {
+    leinwand.draw_path(this);
+  }
+}
 
 // ======================================================================
 
@@ -29,6 +71,7 @@ abstract class Leinwand {
         size = Size(size.width / size.height, 1.0) {
     scale(size.height);
   }
+  void draw_path(LeinwandPath path);
   void save();
   void restore();
   void scale(double scal) => _scale *= scal;
@@ -57,6 +100,17 @@ abstract class LeinwandDraw<Draw> extends Leinwand {
 
 class LeinwandCanvas extends LeinwandDraw<Canvas> {
   LeinwandCanvas(Canvas canvas, Size size) : super(canvas, size);
+
+  @override
+  void draw_path(LeinwandPath source) {
+    final path = Path();
+    source._path.forEach((_LeinwandPathSegment segment) => segment.draw(path));
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = source._paint.strokeWidth
+      ..color = source._paint.color;
+    canvas_.drawPath(path, paint);
+  }
 
   @override
   void save() => canvas_.save();
@@ -129,6 +183,10 @@ class LeinwandCanvas extends LeinwandDraw<Canvas> {
 class LeinwandPdf extends LeinwandDraw<PdfGraphics> {
   LeinwandPdf(PdfGraphics canvas, Size size) : super(canvas, size) {
     flip_ns();
+  }
+
+  @override
+  void draw_path(LeinwandPath path) {
   }
 
   @override

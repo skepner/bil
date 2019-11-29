@@ -5,28 +5,58 @@ import 'package:flutter/material.dart';
 import 'package:window_size/window_size.dart' show getWindowInfo, setWindowFrame;
 
 import 'tree.dart';
-import 'canvas.dart' show Leinwand, LeinwandCanvas, Pixels, Scaled, draw_pdf;
+import 'canvas.dart' show LeinwandPath, LeinwandObject, Leinwand, LeinwandCanvas, Pixels, Scaled, draw_pdf;
 import 'utilities.dart' show choose_file_to_write;
 
 // ======================================================================
 
 class DrawTree {
+  final double _aspect; // width / height
   Tree _tree;
   Size _size_painted;
+  List<LeinwandObject> _objects;
+
+  DrawTree(this._aspect);
+
+  double get height => 1.0;
+  double get width => _aspect * height;
 
   bool get has_tree => _tree != null;
 
   void set_tree(Tree tree) {
     _tree = tree;
+    draw();
     // print("DrawTree set_tree $_tree");
   }
 
+  void draw() {
+    final vertical_step = this.height / _tree.height;
+    final horizontal_step = this.width / _tree.max_cumulative_length;
+    _objects = List<LeinwandObject>();
+    final branches = LeinwandPath(color: Color(0xFF000000), scaled_width: Scaled(vertical_step));
+    _tree.iterate_and_call(
+      pre: (Node node) {
+        final dc = node.data("c");
+        branches.line(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
+            Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset));
+        final shown_children = node.shown_children;
+        branches.line(Offset(horizontal_step * node.cumulative, vertical_step * shown_children.first.cumulative_vertical_offset),
+            Offset(horizontal_step * node.cumulative, vertical_step * shown_children.last.cumulative_vertical_offset));
+      },
+      leaf: (Node node) {
+        branches.line(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
+          Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset));
+      },
+    );
+    _objects.add(branches);
+  }
+
   void make_pdf() async {
-    final doc = draw_pdf(size: _size_painted, paint: (Leinwand leinwand) => this.paint(leinwand));
-    final filename = await choose_file_to_write(suggestedFileName: "tree.pdf", allowedFileTypes: <String>["pdf"]);
-    await File(filename).writeAsBytes(doc.save());
-    final proc_result = await Process.run('open', [filename]);
-    print(proc_result.stdout);
+    // final doc = draw_pdf(size: _size_painted, paint: (Leinwand leinwand) => this.paint(leinwand));
+    // final filename = await choose_file_to_write(suggestedFileName: "tree.pdf", allowedFileTypes: <String>["pdf"]);
+    // await File(filename).writeAsBytes(doc.save());
+    // final proc_result = await Process.run('open', [filename]);
+    // print(proc_result.stdout);
   }
 
   void paint(Leinwand leinwand, [Size size]) {
@@ -34,29 +64,31 @@ class DrawTree {
       if (size != null) {
         _size_painted = size;
       }
-      print("DrawTree::paint leinwand size ${leinwand.size}");
-      print("DrawTree::paint tree: $_tree  tree width (max_cumulative_length): ${_tree.max_cumulative_length}  num_leaves: ${_tree.number_of_leaves}");
+      _objects.forEach((LeinwandObject obj) => obj.draw(leinwand));
 
-      final vertical_step = leinwand.size.height / _tree.height;
-      final horizontal_step = leinwand.size.width / _tree?.max_cumulative_length;
-      print("horizontal_step: $horizontal_step  vertical_step: $vertical_step");
+      // print("DrawTree::paint leinwand size ${leinwand.size}");
+      // print("DrawTree::paint tree: $_tree  tree width (max_cumulative_length): ${_tree.max_cumulative_length}  num_leaves: ${_tree.number_of_leaves}");
 
-      leinwand.rectangle(leinwand.top_left & leinwand.size, outline: Color(0xFF008080), outline_width: Pixels(1.0));
+      // final vertical_step = leinwand.size.height / _tree.height;
+      // final horizontal_step = leinwand.size.width / _tree?.max_cumulative_length;
+      // print("horizontal_step: $horizontal_step  vertical_step: $vertical_step");
 
-      _tree.iterate_and_call(
-        pre: (Node node) {
-          final dc = node.data("c");
-          leinwand.line_scaled(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
-              Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
-          final shown_children = node.shown_children;
-          leinwand.line_scaled(Offset(horizontal_step * node.cumulative, vertical_step * shown_children.first.cumulative_vertical_offset),
-              Offset(horizontal_step * node.cumulative, vertical_step * shown_children.last.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
-        },
-        leaf: (Node node) {
-          leinwand.line_scaled(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
-              Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
-        },
-      );
+      // leinwand.rectangle(leinwand.top_left & leinwand.size, outline: Color(0xFF008080), outline_width: Pixels(1.0));
+
+      // _tree.iterate_and_call(
+      //   pre: (Node node) {
+      //     final dc = node.data("c");
+      //     leinwand.line_scaled(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
+      //         Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
+      //     final shown_children = node.shown_children;
+      //     leinwand.line_scaled(Offset(horizontal_step * node.cumulative, vertical_step * shown_children.first.cumulative_vertical_offset),
+      //         Offset(horizontal_step * node.cumulative, vertical_step * shown_children.last.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
+      //   },
+      //   leaf: (Node node) {
+      //     leinwand.line_scaled(Offset(horizontal_step * (node.cumulative - node.edge), vertical_step * node.cumulative_vertical_offset),
+      //         Offset(horizontal_step * node.cumulative, vertical_step * node.cumulative_vertical_offset), Color(0xFF000000), Scaled(vertical_step));
+      //   },
+      // );
 
       // leinwand.rectangle(const Offset(0.5, 0.5) & const Size(0.2, 0.1), outline: Color(0xFF008080), outline_width: Pixels(5.0), fill: Color(0xFFFF80FF));
 
